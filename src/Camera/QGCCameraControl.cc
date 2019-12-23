@@ -768,6 +768,7 @@ void
 QGCCameraControl::_setVideoStatus(VideoStatus status)
 {
     if(_video_status != status) {
+        qCDebug(CameraControlLog) << "_setVideoStatus()" << status;
         _video_status = status;
         emit videoStatusChanged();
         if(status == VIDEO_CAPTURE_STATUS_RUNNING) {
@@ -795,7 +796,7 @@ void
 QGCCameraControl::_setPhotoStatus(PhotoStatus status)
 {
     if(_photo_status != status) {
-        qCDebug(CameraControlLog) << "Set Photo Status:" << status;
+        qCDebug(CameraControlLog) << "_setPhotoStatus()" << status;
         _photo_status = status;
         emit photoStatusChanged();
     }
@@ -1236,6 +1237,7 @@ QGCCameraControl::handleParamValue(const mavlink_param_ext_value_t& value)
 void
 QGCCameraControl::_updateActiveList()
 {
+    qCDebug(CameraControlVerboseLog) << "_updateActiveList()";
     //-- Clear out excluded parameters based on exclusion rules
     QStringList exclusionList;
     for(QGCCameraOptionExclusion* param: _valueExclusions) {
@@ -1354,6 +1356,7 @@ QGCCameraControl::_processCondition(const QString condition)
 void
 QGCCameraControl::_updateRanges(Fact* pFact)
 {
+    qCDebug(CameraControlVerboseLog) << "_updateRanges()" << pFact->name();
     QMap<Fact*, QGCCameraOptionRange*> rangesSet;
     QMap<Fact*, QString> rangesReset;
     QStringList changedList;
@@ -1471,7 +1474,7 @@ QGCCameraControl::_requestStorageInfo()
 void
 QGCCameraControl::handleSettings(const mavlink_camera_settings_t& settings)
 {
-    qCDebug(CameraControlLog) << "handleSettings() Mode:" << settings.mode_id;
+    qCDebug(CameraControlLog) << "handleSettings()" << settings.mode_id << settings.zoomLevel << settings.focusLevel;
     _setCameraMode(static_cast<CameraMode>(settings.mode_id));
     qreal z = static_cast<qreal>(settings.zoomLevel);
     qreal f = static_cast<qreal>(settings.focusLevel);
@@ -1489,7 +1492,7 @@ QGCCameraControl::handleSettings(const mavlink_camera_settings_t& settings)
 void
 QGCCameraControl::handleStorageInfo(const mavlink_storage_information_t& st)
 {
-    qCDebug(CameraControlLog) << "handleStorageInfo:" << st.available_capacity << st.status << st.storage_count << st.storage_id << st.total_capacity << st.used_capacity;
+    qCDebug(CameraControlLog) << "handleStorageInfo()" << st.available_capacity << st.status << st.storage_count << st.storage_id << st.total_capacity << st.used_capacity;
     if(st.status == STORAGE_STATUS_READY) {
         uint32_t t = static_cast<uint32_t>(st.total_capacity);
         if(_storageTotal != t) {
@@ -1512,7 +1515,7 @@ QGCCameraControl::handleStorageInfo(const mavlink_storage_information_t& st)
 void
 QGCCameraControl::handleBatteryStatus(const mavlink_battery_status_t& bs)
 {
-    qCDebug(CameraControlLog) << "handleBatteryStatus:" << bs.battery_remaining;
+    qCDebug(CameraControlLog) << "handleBatteryStatus()" << bs.battery_remaining;
     if(bs.battery_remaining >= 0 && _batteryRemaining != static_cast<int>(bs.battery_remaining)) {
         _batteryRemaining = static_cast<int>(bs.battery_remaining);
         emit batteryRemainingChanged();
@@ -1524,7 +1527,7 @@ void
 QGCCameraControl::handleCaptureStatus(const mavlink_camera_capture_status_t& cap)
 {
     //-- This is a response to MAV_CMD_REQUEST_CAMERA_CAPTURE_STATUS
-    qCDebug(CameraControlLog) << "handleCaptureStatus:" << cap.available_capacity << cap.image_interval << cap.image_status << cap.recording_time_ms << cap.video_status;
+    qCDebug(CameraControlLog) << "handleCaptureStatus()" << cap.available_capacity << cap.image_interval << cap.image_status << cap.recording_time_ms << cap.video_status;
     //-- Disk Free Space
     uint32_t a = static_cast<uint32_t>(cap.available_capacity);
     if(_storageFree != a) {
@@ -1565,7 +1568,7 @@ QGCCameraControl::handleCaptureStatus(const mavlink_camera_capture_status_t& cap
 void
 QGCCameraControl::handleVideoInfo(const mavlink_video_stream_information_t* vi)
 {
-    qCDebug(CameraControlLog) << "handleVideoInfo:" << vi->stream_id << vi->uri;
+    qCDebug(CameraControlLog) << "handleVideoInfo()" << vi->stream_id << vi->uri;
     _expectedCount = vi->count;
     if(!_findStream(vi->stream_id, false)) {
         qCDebug(CameraControlLog) << "Create stream handler for stream ID:" << vi->stream_id;
@@ -1598,7 +1601,7 @@ void
 QGCCameraControl::handleVideoStatus(const mavlink_video_stream_status_t* vs)
 {
     _streamStatusTimer.stop();
-    qCDebug(CameraControlLog) << "handleVideoStatus:" << vs->stream_id;
+    qCDebug(CameraControlLog) << "handleVideoStatus()" << vs->stream_id;
     QGCVideoStreamInfo* pInfo = _findStream(vs->stream_id);
     if(pInfo) {
         pInfo->update(vs);
@@ -1713,7 +1716,7 @@ QGCCameraControl::thermalStreamInstance()
 void
 QGCCameraControl::_requestStreamInfo(uint8_t streamID)
 {
-    qCDebug(CameraControlLog) << "Requesting video stream info for:" << streamID;
+    qCDebug(CameraControlLog) << "_requestStreamInfo()" << streamID;
     _vehicle->sendMavCommand(
         _compID,                                            // Target component
         MAV_CMD_REQUEST_VIDEO_STREAM_INFORMATION,           // Command id
@@ -1725,7 +1728,7 @@ QGCCameraControl::_requestStreamInfo(uint8_t streamID)
 void
 QGCCameraControl::_requestStreamStatus(uint8_t streamID)
 {
-    qCDebug(CameraControlLog) << "Requesting video stream status for:" << streamID;
+    qCDebug(CameraControlLog) << "_requestStreamStatus()" << streamID;
     _vehicle->sendMavCommand(
         _compID,                                            // Target component
         MAV_CMD_REQUEST_VIDEO_STREAM_STATUS,                // Command id
@@ -1906,6 +1909,7 @@ QGCCameraControl::_loadRanges(QDomNode option, const QString factName, QString p
 void
 QGCCameraControl::_processRanges()
 {
+    qCDebug(CameraControlVerboseLog) << "_processRanges()";
     //-- After all parameter are loaded, process parameter ranges
     for(QGCCameraOptionRange* pRange: _optionRanges) {
         Fact* pRFact = getFact(pRange->targetParam);
@@ -1981,7 +1985,7 @@ QGCCameraControl::_handleDefinitionFile(const QString &url)
 void
 QGCCameraControl::_httpRequest(const QString &url)
 {
-    qCDebug(CameraControlLog) << "Request camera definition:" << url;
+    qCDebug(CameraControlLog) << "_httpRequest()" << url;
     if(!_netManager) {
         _netManager = new QNetworkAccessManager(this);
     }
@@ -2089,7 +2093,7 @@ QGCCameraControl::validateParameter(Fact* pFact, QVariant& newValue)
 QStringList
 QGCCameraControl::activeSettings()
 {
-    qCDebug(CameraControlLog) << "Active:" << _activeSettings;
+    qCDebug(CameraControlLog) << "activeSettings()" << _activeSettings;
     return _activeSettings;
 }
 
